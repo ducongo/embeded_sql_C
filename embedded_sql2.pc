@@ -1,0 +1,456 @@
+/* This is a sample dynamic Embedded SQL program. In order to run it,
+   You need to do the following. 
+1. proc dsqlm2.pc
+2. cc -c dsqlm2.c -I/usr/include/oracle/11.2/client64
+3. cc -o dsqlm2 dsqlm2.o -L/usr/lib/oracle/11.2/client64/lib -lclntsh
+4. ./dsqlm2
+*/
+
+#include <stdio.h>
+exec sql include sqlca;
+exec sql begin declare section;
+  char sqlstmt[1024];
+  
+  char snumber[15];
+  char sname[15];
+  char city[15];
+  char pnumber[15];
+  char pname[15];
+  char pcolor[15];
+  int status;
+  int qty;
+  float weight;
+
+
+
+  char name[10];
+  int  balance;
+  char *username= "fedora";
+  char *password= "oracle";
+
+exec sql end declare section;
+
+int main() {
+  exec sql declare a_cursor cursor for
+           select *
+           from   Supplier;
+
+  exec sql declare b_cursor cursor for
+           select *
+           from   Part;
+
+  exec sql declare c_cursor cursor for
+           select *
+           from   SP;
+
+  exec sql connect :username identified by :password;
+  if (sqlca.sqlcode == 0)
+      printf("Oracle connected\n");    
+  else
+      printf("Oracle not connected\n");
+   
+/*  create table account using dynamic SQL Method 1	*/
+
+  strcpy(sqlstmt, "create table Supplier (s# varchar(15) NOT NULL primary key, sname varchar(15), status integer, city varchar(15))");
+
+  exec sql set transaction read write;
+  printf("execute immediate \n%80s \n",sqlstmt);
+  exec sql execute immediate :sqlstmt;
+  if (sqlca.sqlcode == 0)
+      printf("Table created \n");    
+  else
+      printf("Table not created\n");
+
+  strcpy(sqlstmt, "create table Part (p# varchar(15) NOT NULL primary key, pname varchar(15), pcolor varchar(15), weight FLOAT(126), city varchar(15))");
+  
+  printf("execute immediate \n%80s \n",sqlstmt);
+  exec sql execute immediate :sqlstmt;
+  if (sqlca.sqlcode == 0)
+      printf("Table created \n");    
+  else
+      printf("Table not created\n");
+
+  strcpy(sqlstmt, "create table SP (s# varchar(15), p# varchar(15), qty integer, primary key (s#, p#))");
+  
+  printf("execute immediate \n%80s \n",sqlstmt);
+  exec sql execute immediate :sqlstmt;
+  if (sqlca.sqlcode == 0)
+      printf("Table created \n");    
+  else
+      printf("Table not created\n");
+/*  populate table account using dynamic SQL method 2	*/
+/*  use the prepare statment                            */
+
+  strcpy(sqlstmt, "insert into Supplier values (:v1, :v2, :v3, :v4)");
+
+  exec sql prepare s from :sqlstmt;
+  if (sqlca.sqlcode == 0)
+      printf("statement prepared \n");    
+  else
+      printf("statement not prepared \n");    
+  
+/*  insert two tuples into the table using dynamic SQL method 2 */
+
+  strcpy(snumber, "S1");
+  strcpy(sname, "Smith");
+  strcpy(city, "London");
+  status = 20;		
+
+/*  using execute using statement                               */
+  exec sql execute s using :snumber, :sname, :status, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S2");
+  strcpy(sname, "Jones");
+  strcpy(city, "Paris");
+  status = 30;		
+
+  exec sql execute s using :snumber, :sname, :status, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  
+  strcpy(snumber, "S3");
+  strcpy(sname, "Blake");
+  strcpy(city, "Paris");
+  status = 30;		
+
+  exec sql execute s using :snumber, :sname, :status, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S4");
+  strcpy(sname, "Kingwaya");
+  strcpy(city, "London");
+  status = 20;		
+
+  exec sql execute s using :snumber, :sname, :status, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  
+  strcpy(snumber, "S5");
+  strcpy(sname, "Adams");
+  strcpy(city, "Athens");
+  status = 30;		
+
+  exec sql execute s using :snumber, :sname, :status, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+/*  query table account using static SQL */
+
+  exec sql open a_cursor;
+  if (sqlca.sqlcode == 0)
+      printf("Cursor opened\n");
+  else
+      printf("Cursor error\n");
+ 
+  printf("S#               SNAME          CITY            STATUS\n");
+  printf("--------------- --------------- --------------- ---------------\n");
+ 
+  exec sql fetch a_cursor into :snumber, :sname, :status, :city;
+  while(sqlca.sqlcode==0) {
+    printf("%4s  %15s %15s %3d\n", snumber, sname, city, status);
+    exec sql fetch a_cursor into :snumber, :sname, :status, :city;
+  }
+  exec sql close a_cursor;
+
+  strcpy(sqlstmt, "insert into Part values (:v1, :v2, :v3, :v4, :v5)");
+
+  exec sql prepare s from :sqlstmt;
+  if (sqlca.sqlcode == 0)
+      printf("statement prepared \n");    
+  else
+      printf("statement not prepared \n"); 
+
+  strcpy(pnumber, "P1");
+  strcpy(pname, "Nut");
+  strcpy(pcolor, "Red");
+  strcpy(city, "London");
+  weight = 12.0;		
+
+  exec sql execute s using :pnumber, :pname, :pcolor, :weight, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+  
+  strcpy(pnumber, "P2");
+  strcpy(pname, "Bolt");
+  strcpy(pcolor, "Green");
+  strcpy(city, "Paris");
+  weight = 17.0;		
+
+  exec sql execute s using :pnumber, :pname, :pcolor, :weight, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  
+  strcpy(pnumber, "P3");
+  strcpy(pname, "Screw");
+  strcpy(pcolor, "Blue");
+  strcpy(city, "Oslo");
+  weight = 17.0;		
+
+  exec sql execute s using :pnumber, :pname, :pcolor, :weight, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+  
+  strcpy(pnumber, "P4");
+  strcpy(pname, "Screw");
+  strcpy(pcolor, "Red");
+  strcpy(city, "London");
+  weight = 14.0;		
+
+  exec sql execute s using :pnumber, :pname, :pcolor, :weight, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+  
+  strcpy(pnumber, "P5");
+  strcpy(pname, "Cam");
+  strcpy(pcolor, "Blue");
+  strcpy(city, "Paris");
+  weight = 12.0;		
+
+  exec sql execute s using :pnumber, :pname, :pcolor, :weight, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+  
+  strcpy(pnumber, "P6");
+  strcpy(pname, "Cog");
+  strcpy(pcolor, "Red");
+  strcpy(city, "London");
+  weight = 19.0;		
+
+  exec sql execute s using :pnumber, :pname, :pcolor, :weight, :city;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");     
+
+
+  exec sql open b_cursor;
+  if (sqlca.sqlcode == 0)
+      printf("Cursor opened\n");
+  else
+      printf("Cursor error\n");
+
+  printf("P#               PNAME          PCOLOR          CITY            WEIGHT\n");
+  printf("--------------- --------------- --------------- --------------- ---------------\n");
+
+  exec sql fetch b_cursor into :pnumber, :pname, :pcolor, :weight, :city;
+  while(sqlca.sqlcode==0) {
+    printf("%4s  %15s %15s %15s %.2f\n", pnumber, pname, pcolor, city, weight);
+    exec sql fetch b_cursor into :pnumber, :pname, :pcolor, :weight, :city;
+  }
+  exec sql close b_cursor;
+
+  strcpy(sqlstmt, "insert into SP values (:v1, :v2, :v3)");
+
+  exec sql prepare s from :sqlstmt;
+  if (sqlca.sqlcode == 0)
+      printf("statement prepared \n");    
+  else
+      printf("statement not prepared \n"); 
+  
+  strcpy(snumber, "S1");
+  strcpy(pnumber, "P1");
+  qty = 300;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S1");
+  strcpy(pnumber, "P2");
+  qty = 200;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S1");
+  strcpy(pnumber, "P3");
+  qty = 400;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S1");
+  strcpy(pnumber, "P4");
+  qty = 200;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S1");
+  strcpy(pnumber, "P5");
+  qty = 100;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S1");
+  strcpy(pnumber, "P6");
+  qty = 100;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S2");
+  strcpy(pnumber, "P1");
+  qty = 300;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S2");
+  strcpy(pnumber, "P2");
+  qty = 400;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S2");
+  strcpy(pnumber, "P3");
+  qty = 500;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S3");
+  strcpy(pnumber, "P2");
+  qty = 200;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S3");
+  strcpy(pnumber, "P3");
+  qty = 200;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S3");
+  strcpy(pnumber, "P4");
+  qty = 300;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S4");
+  strcpy(pnumber, "P2");
+  qty = 300;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+  strcpy(snumber, "S4");
+  strcpy(pnumber, "P3");
+  qty = 400;		
+
+  exec sql execute s using :snumber, :pnumber, :qty;
+  if (sqlca.sqlcode == 0)
+      printf("insert done\n");
+  else
+      printf("insert failed\n");
+
+
+  exec sql open c_cursor;
+  if (sqlca.sqlcode == 0)
+      printf("Cursor opened\n");
+  else
+      printf("Cursor error\n");
+ 
+  printf("S#               P#             QTY\n");
+  printf("--------------- --------------- ---------------\n");
+ 
+  exec sql fetch c_cursor into :snumber, :pnumber, :qty;
+  while(sqlca.sqlcode==0) {
+    printf("%4s  %4s  %3d\n", snumber, pnumber, qty);
+     exec sql fetch c_cursor into :snumber, :pnumber, :qty;
+  }
+  exec sql close c_cursor;
+ 
+/*     drop table account using SQL DDL command		*/
+
+  exec sql execute immediate "drop table Supplier";
+  if (sqlca.sqlcode == 0)
+      printf("Table Supplier dropped \n");    
+  else
+      printf("Table Supplier not dropped \n");
+
+  exec sql execute immediate "drop table Part";
+  if (sqlca.sqlcode == 0)
+      printf("Table Part dropped \n");    
+  else
+      printf("Table Part not dropped \n");
+
+  exec sql execute immediate "drop table SP";
+  if (sqlca.sqlcode == 0)
+      printf("Table SP dropped \n");    
+  else
+      printf("Table SP not dropped \n");  
+
+  exec sql commit release;
+  exit(0);
+}
+
